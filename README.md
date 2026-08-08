@@ -1,0 +1,63 @@
+# Betting Calculators
+
+A single-page, no-dependency HTML tool for calculating sports betting math. Everything runs client-side in the browser — no server, no build step, no external libraries. Open `wager-calculator.html` directly, or host it with GitHub Pages for a shareable URL.
+
+The page has two tabs: **Wager Calculator** and **Arbitrage Calculator**.
+
+---
+
+## Wager Calculator
+
+Tracks up to 10 individual bets at once and rolls them up into totals.
+
+**Inputs (per row):**
+- Stake ($)
+- American odds (e.g. `+2000`, `-150`)
+
+**Outputs:**
+- Payout per bet
+- **Total stake** — sum of all stakes entered
+- **Total payout** — sum of all individual payouts
+- **Total profit** — total payout minus total stake
+- **Average odds** — weighted by stake size, so larger bets influence the average more than smaller ones
+
+**Formulas:**
+- Positive odds: `profit = stake × (odds / 100)`
+- Negative odds: `profit = stake × (100 / |odds|)`
+- `payout = stake + profit`
+- `average odds = Σ(odds × stake) / Σ(stake)`
+
+---
+
+## Arbitrage Calculator
+
+Given the odds on both sides of an event (e.g. from two different sportsbooks), calculates how to split a total stake so the payout is identical regardless of which side wins — and tells you whether that split is a true arbitrage (guaranteed profit) or a guaranteed loss.
+
+**Inputs:**
+- Total stake ($)
+- American odds for Bet 1
+- American odds for Bet 2
+
+**Outputs:**
+- Stake and payout for each bet
+- **Total payout** — the guaranteed payout, same for either outcome
+- **Total profit** — total payout minus total stake
+- **ROI** — profit as a percentage of total stake
+- **Combined implied probability** — sum of both bets' implied win probabilities
+- A status message: arbitrage found (profit locked in) or no arbitrage (this split guarantees a loss)
+
+**Formulas:**
+- Decimal odds: positive → `1 + (odds / 100)`, negative → `1 + (100 / |odds|)`
+- Implied probability: `1 / decimal odds`
+- Stake per bet: `total stake × (implied probability / combined implied probability)`
+- Combined implied probability under 100% = arbitrage opportunity; over 100% = guaranteed loss
+
+---
+
+## Tech
+
+Plain HTML, CSS, and vanilla JavaScript — no frameworks, no build tools, no dependencies. Everything recalculates live as you type. Nothing is saved between sessions; refreshing the page clears all fields.
+
+## Usage
+
+Open `wager-calculator.html` in any browser, or enable GitHub Pages on this repo to access it from a URL (including on mobile).
