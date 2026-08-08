@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Wager Calculator</title>
+<style>
+  :root {
+    --bg: #1b1d22;
+    --panel: #24262d;
+    --border: #383b44;
+    --text: #e8e9ec;
+    --muted: #9799a3;
+    --accent: #4f8cff;
+    --win: #3ecf8e;
+    --loss: #e2685c;
+    --mono: "SF Mono", "Consolas", "Menlo", monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    margin: 0;
+    padding: 32px 16px 60px;
+    display: flex;
+    justify-content: center;
+  }
+  .wrap { width: 100%; max-width: 640px; }
+  h1 {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0 0 4px;
+  }
+  .sub {
+    color: var(--muted);
+    font-size: 13px;
+    margin: 0 0 20px;
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+  .tab-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 10px 16px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active {
+    color: var(--text);
+    border-bottom-color: var(--accent);
+  }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    text-align: left;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    padding: 0 8px 8px;
+  }
+  th.num, td.num { text-align: right; }
+  td { padding: 4px; }
+  input {
+    width: 100%;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    outline: none;
+  }
+  input:focus { border-color: var(--accent); }
+  input::placeholder { color: #5b5d66; }
+  .rownum {
+    color: var(--muted);
+    font-size: 12px;
+    width: 20px;
+    text-align: center;
+  }
+  .payout-cell {
+    font-family: var(--mono);
+    font-size: 14px;
+    color: var(--muted);
+    padding: 8px 10px;
+    white-space: nowrap;
+  }
+  .payout-cell.active { color: var(--win); }
+
+  .actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+  }
+  button.clear-btn, button.tab-btn {
+    font-family: inherit;
+  }
+  button.clear-btn {
+    font-size: 13px;
+    border-radius: 6px;
+    padding: 8px 14px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: #d97757;
+  }
+  button.clear-btn:hover { border-color: var(--accent); }
+
+  .summary {
+    margin-top: 28px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 24px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px 24px;
+  }
+  .stat-label {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .stat-value {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 600;
+  }
+  .stat-value.win { color: var(--win); }
+  .stat-value.odds { color: var(--accent); }
+  .full { grid-column: 1 / -1; height: 1px; background: var(--border); margin: -4px 0; }
+
+  footer {
+    margin-top: 20px;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  /* Arbitrage panel */
+  .total-stake-row {
+    margin-bottom: 20px;
+  }
+  .total-stake-row label {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .total-stake-row input { max-width: 220px; }
+
+  .arb-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .bet-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .bet-card h3 {
+    margin: 0 0 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .field-label {
+    font-size: 11px;
+    color: var(--muted);
+    margin: 10px 0 4px;
+  }
+  .field-label:first-of-type { margin-top: 0; }
+  .computed-value {
+    font-family: var(--mono);
+    font-size: 16px;
+    padding: 8px 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--win);
+  }
+
+  .arb-status {
+    margin-top: 16px;
+    font-size: 12px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  .arb-status.positive { color: var(--win); border-color: rgba(62,207,142,0.4); background: rgba(62,207,142,0.08); }
+  .arb-status.negative { color: var(--loss); border-color: rgba(226,104,92,0.4); background: rgba(226,104,92,0.08); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Betting Calculators</h1>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="wager">Wager Calculator</button>
+    <button class="tab-btn" data-tab="arb">Arbitrage Calculator</button>
+  </div>
+
+  <!-- ============ WAGER CALCULATOR PANEL ============ -->
+  <div class="panel active" id="panel-wager">
+    <p class="sub">Enter stake and American odds for each bet (e.g. 95 and +2000, or 50 and -150).</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th class="rownum">#</th>
+          <th>Stake ($)</th>
+          <th>Odds</th>
+          <th class="num">Payout</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+
+    <div class="actions">
+      <button id="clearBtn" class="clear-btn">Clear all</button>
+    </div>
+
+    <div class="summary">
+      <div>
+        <div class="stat-label">Total stake</div>
+        <div class="stat-value" id="totalStake">$0.00</div>
+      </div>
+      <div>
+        <div class="stat-label">Total payout</div>
+        <div class="stat-value win" id="totalPayout">$0.00</div>
+      </div>
+      <div class="full"></div>
+      <div>
+        <div class="stat-label">Total profit</div>
+        <div class="stat-value win" id="totalProfit">$0.00</div>
+      </div>
+      <div>
+        <div class="stat-label">Average odds</div>
+        <div class="stat-value odds" id="avgOdds">—</div>
+      </div>
+    </div>
+
+    <footer>
+      Average odds is weighted by stake size (larger bets count more toward the average).
+      Payout = stake + profit. Positive odds: profit = stake × odds/100. Negative odds: profit = stake × 100/|odds|.
+    </footer>
+  </div>
+
+  <!-- ============ ARBITRAGE CALCULATOR PANEL ============ -->
+  <div class="panel" id="panel-arb">
+    <p class="sub">Enter the odds for each side of the bet and your total stake. The calculator splits your stake so the payout is the same no matter which side wins.</p>
+
+    <div class="total-stake-row">
+      <label for="arbTotalStake">Total stake ($)</label>
+      <input type="number" step="any" id="arbTotalStake" placeholder="100.00">
+    </div>
+
+    <div class="arb-grid">
+      <div class="bet-card">
+        <h3>Bet 1</h3>
+        <div class="field-label">Odds</div>
+        <input type="text" id="arbOdds1" placeholder="+150 or -110">
+        <div class="field-label">Stake</div>
+        <div class="computed-value" id="arbStake1">$0.00</div>
+        <div class="field-label">Payout</div>
+        <div class="computed-value" id="arbPayout1">$0.00</div>
+      </div>
+      <div class="bet-card">
+        <h3>Bet 2</h3>
+        <div class="field-label">Odds</div>
+        <input type="text" id="arbOdds2" placeholder="+150 or -110">
+        <div class="field-label">Stake</div>
+        <div class="computed-value" id="arbStake2">$0.00</div>
+        <div class="field-label">Payout</div>
+        <div class="computed-value" id="arbPayout2">$0.00</div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="arbClearBtn" class="clear-btn">Clear all</button>
+    </div>
+
+    <div class="summary">
+      <div>
+        <div class="stat-label">Total payout</div>
+        <div class="stat-value win" id="arbTotalPayout">$0.00</div>
+      </div>
+      <div>
+        <div class="stat-label">Total profit</div>
+        <div class="stat-value win" id="arbTotalProfit">$0.00</div>
+      </div>
+      <div class="full"></div>
+      <div>
+        <div class="stat-label">ROI</div>
+        <div class="stat-value odds" id="arbROI">0.00%</div>
+      </div>
+      <div>
+        <div class="stat-label">Combined implied probability</div>
+        <div class="stat-value" id="arbImplied">—</div>
+      </div>
+    </div>
+
+    <div class="arb-status" id="arbStatus" style="display:none;"></div>
+
+    <footer>
+      Stakes are split proportional to each bet's implied probability so both outcomes return the same payout.
+      Combined implied probability under 100% means a true arbitrage (guaranteed profit); over 100% means a guaranteed loss.
+    </footer>
+  </div>
+</div>
+
+<script>
+  /* ---------- Tabs ---------- */
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  const panels = document.querySelectorAll('.panel');
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      tabBtns.forEach(b => b.classList.remove('active'));
+      panels.forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  function fmt(n) {
+    if (!Number.isFinite(n)) n = 0;
+    return '$' + n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function parseOdds(raw) {
+    if (raw === null) return null;
+    const s = raw.trim().replace(/^\+/, '');
+    if (s === '' || s === '-') return null;
+    const n = Number(s);
+    if (!Number.isFinite(n) || n === 0) return null;
+    return n;
+  }
+
+  function americanToDecimal(odds) {
+    if (odds > 0) return 1 + odds / 100;
+    return 1 + 100 / Math.abs(odds);
+  }
+
+  /* ---------- Wager Calculator ---------- */
+  const ROWS = 10;
+  const tbody = document.getElementById('rows');
+
+  for (let i = 0; i < ROWS; i++) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="rownum">${i + 1}</td>
+      <td><input type="number" step="any" class="stake" placeholder="0.00"></td>
+      <td><input type="text" class="odds" placeholder="+2000 or -150"></td>
+      <td class="num payout-cell" id="payout-${i}">—</td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  const stakeInputs = [...document.querySelectorAll('.stake')];
+  const oddsInputs = [...document.querySelectorAll('.odds')];
+
+  function calcPayout(stake, odds) {
+    if (odds > 0) return stake + stake * (odds / 100);
+    return stake + stake * (100 / Math.abs(odds));
+  }
+
+  function recalc() {
+    let totalStake = 0;
+    let totalPayout = 0;
+    let weightedOddsSum = 0;
+
+    for (let i = 0; i < ROWS; i++) {
+      const stakeVal = parseFloat(stakeInputs[i].value);
+      const oddsVal = parseOdds(oddsInputs[i].value);
+      const cell = document.getElementById('payout-' + i);
+      const hasStake = Number.isFinite(stakeVal) && stakeVal > 0;
+
+      if (hasStake && oddsVal !== null) {
+        const payout = calcPayout(stakeVal, oddsVal);
+        totalStake += stakeVal;
+        totalPayout += payout;
+        weightedOddsSum += oddsVal * stakeVal;
+        cell.textContent = fmt(payout);
+        cell.classList.add('active');
+      } else {
+        cell.textContent = '—';
+        cell.classList.remove('active');
+      }
+    }
+
+    document.getElementById('totalStake').textContent = fmt(totalStake);
+    document.getElementById('totalPayout').textContent = fmt(totalPayout);
+    document.getElementById('totalProfit').textContent = fmt(totalPayout - totalStake);
+
+    const avgEl = document.getElementById('avgOdds');
+    if (totalStake > 0) {
+      const avg = weightedOddsSum / totalStake;
+      avgEl.textContent = (avg > 0 ? '+' : '') + Math.round(avg);
+    } else {
+      avgEl.textContent = '—';
+    }
+  }
+
+  [...stakeInputs, ...oddsInputs].forEach(el => el.addEventListener('input', recalc));
+
+  document.getElementById('clearBtn').addEventListener('click', () => {
+    stakeInputs.forEach(el => el.value = '');
+    oddsInputs.forEach(el => el.value = '');
+    recalc();
+  });
+
+  recalc();
+
+  /* ---------- Arbitrage Calculator ---------- */
+  const arbTotalStakeEl = document.getElementById('arbTotalStake');
+  const arbOdds1El = document.getElementById('arbOdds1');
+  const arbOdds2El = document.getElementById('arbOdds2');
+  const arbStatusEl = document.getElementById('arbStatus');
+
+  function arbRecalc() {
+    const totalStake = parseFloat(arbTotalStakeEl.value);
+    const odds1 = parseOdds(arbOdds1El.value);
+    const odds2 = parseOdds(arbOdds2El.value);
+
+    const hasStake = Number.isFinite(totalStake) && totalStake > 0;
+    const valid = hasStake && odds1 !== null && odds2 !== null;
+
+    if (!valid) {
+      document.getElementById('arbStake1').textContent = '$0.00';
+      document.getElementById('arbStake2').textContent = '$0.00';
+      document.getElementById('arbPayout1').textContent = '$0.00';
+      document.getElementById('arbPayout2').textContent = '$0.00';
+      document.getElementById('arbTotalPayout').textContent = '$0.00';
+      document.getElementById('arbTotalProfit').textContent = '$0.00';
+      document.getElementById('arbROI').textContent = '0.00%';
+      document.getElementById('arbImplied').textContent = '—';
+      arbStatusEl.style.display = 'none';
+      return;
+    }
+
+    const dec1 = americanToDecimal(odds1);
+    const dec2 = americanToDecimal(odds2);
+    const implied1 = 1 / dec1;
+    const implied2 = 1 / dec2;
+    const combinedImplied = implied1 + implied2;
+
+    const stake1 = totalStake * (implied1 / combinedImplied);
+    const stake2 = totalStake * (implied2 / combinedImplied);
+    const payout1 = stake1 * dec1;
+    const payout2 = stake2 * dec2;
+
+    // payout1 and payout2 should be equal (guaranteed payout regardless of outcome)
+    const guaranteedPayout = payout1;
+    const profit = guaranteedPayout - totalStake;
+    const roi = (profit / totalStake) * 100;
+
+    document.getElementById('arbStake1').textContent = fmt(stake1);
+    document.getElementById('arbStake2').textContent = fmt(stake2);
+    document.getElementById('arbPayout1').textContent = fmt(payout1);
+    document.getElementById('arbPayout2').textContent = fmt(payout2);
+    document.getElementById('arbTotalPayout').textContent = fmt(guaranteedPayout);
+    document.getElementById('arbTotalProfit').textContent = (profit >= 0 ? '' : '-') + fmt(Math.abs(profit));
+    document.getElementById('arbROI').textContent = (roi >= 0 ? '+' : '') + roi.toFixed(2) + '%';
+    document.getElementById('arbImplied').textContent = (combinedImplied * 100).toFixed(2) + '%';
+
+    arbStatusEl.style.display = 'block';
+    if (combinedImplied < 1) {
+      arbStatusEl.className = 'arb-status positive';
+      arbStatusEl.textContent = `Arbitrage opportunity: this split guarantees a ${roi.toFixed(2)}% profit no matter which side wins.`;
+    } else {
+      arbStatusEl.className = 'arb-status negative';
+      arbStatusEl.textContent = `No arbitrage here: combined implied probability is over 100%, so this split guarantees a loss.`;
+    }
+  }
+
+  [arbTotalStakeEl, arbOdds1El, arbOdds2El].forEach(el => el.addEventListener('input', arbRecalc));
+
+  document.getElementById('arbClearBtn').addEventListener('click', () => {
+    arbTotalStakeEl.value = '';
+    arbOdds1El.value = '';
+    arbOdds2El.value = '';
+    arbRecalc();
+  });
+
+  arbRecalc();
+</script>
+</body>
+</html>
