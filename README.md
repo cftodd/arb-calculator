@@ -1,6 +1,6 @@
 # Betting Calculators
 
-A single-page, no-dependency HTML tool for calculating sports betting math. Everything runs client-side in the browser — no server, no build step, no external libraries. Open `wager-calculator.html` directly, or host it with GitHub Pages for a shareable URL.
+A single-page, no-dependency HTML tool for calculating sports betting math. Everything runs client-side in the browser — no server, no build step, no external libraries. Open https://cftodd.github.io/arb-calculator/
 
 The page has three tabs: **Wager Calculator**, **Arbitrage Calculator**, and **Odds Converter**.
 
